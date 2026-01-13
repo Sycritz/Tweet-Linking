@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+#Datasets
+*.mdb
+*.tsv
+
 # Distribution / packaging
 .Python
 build/
