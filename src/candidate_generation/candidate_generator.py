@@ -1,12 +1,5 @@
-import os, sys
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "Provided-Resources"))
-import SerializedListNew_pb2
-import DictionaryWithTitle_pb2
-
-from src.utils import InvertedIndex, PageContext, Candidate
+from src.core import InvertedIndex, PageContext, Candidate
 from src.preprocessing.preprocessing import clean_tweet, get_ngrams
-
 
 def generate_candidates(
     tweet: str, index: InvertedIndex, context: PageContext, top_k: int = 5

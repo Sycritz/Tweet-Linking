@@ -1,5 +1,6 @@
 import numpy as np
-from src.utils.utils import Candidate, compute_commonness, string_similarity
+from src.core import Candidate
+from src.utils.utils import compute_commonness, string_similarity
 
 # Basic features for Now, TODO: implement all features listed in the paper
 def extract_features(candidate: Candidate, total_anchor_score: int) -> np.ndarray:

@@ -1,71 +1,9 @@
-from src.candidate_generation import generate_candidates
-from typing import Optional
-from dataclasses import dataclass
-import lmdb
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-
-import sys,os
-os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Provided-Resources'))
-import SerializedListNew_pb2
-import DictionaryWithTitle_pb2
-
-@dataclass
-class Candidate:
-    ngram: str
-    page_id: str
-    anchor_score: int
-    anchor_type: int
-    page_title: str
-    page_rank: float
-    page_views: float
-    num_categories: int
-    num_anchors: int
-
-
-
-class InvertedIndex:
-    def __init__(self, path: str):
-        self.env = lmdb.open(path, readonly=True, lock=False)
-
-    def get(self, ngram: str) -> list[tuple[str, int, int]]:
-        results = []
-        with self.env.begin() as txn:
-            val = txn.get(ngram.encode('utf-8'))
-            if val:
-                posting = SerializedListNew_pb2.SerializedListNew()
-                posting.ParseFromString(val)
-                for el in posting.Elements:
-                    results.append((el.docId, el.score, el.typ))
-        return results
-
-    def close(self):
-        self.env.close()
-
-
-class PageContext:
-    def __init__(self, path: str):
-        self.env = lmdb.open(path, readonly=True, lock=False)
-
-    def get(self, page_id: str) -> Optional[tuple[str, float, float, int, int]]:
-        with self.env.begin() as txn:
-            val = txn.get(page_id.encode('utf-8'))
-            if val:
-                dico = DictionaryWithTitle_pb2.Dico()
-                dico.ParseFromString(val)
-                return (
-                    dico.PageTitle,
-                    dico.PageRank,
-                    dico.PageViews,
-                    len(dico.Categories),
-                    dico.length_anchors
-                )
-        return None
-
-    def close(self):
-        self.env.close()
+from typing import Optional, Tuple
+from src.core import Candidate, InvertedIndex, PageContext
+from src.candidate_generation.candidate_generator import generate_candidates
+from src.features.features_extractor import extract_features
 
 def compute_commonness(score: int, total_scores: int) -> float:
     if total_scores == 0:
@@ -85,7 +23,7 @@ def string_similarity(s1: str, s2: str) -> float:
 def load_meij_dataset(
     tweets_path: str,
     annotations_path: str
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     tweets_df = pd.read_csv(
         tweets_path,
         sep='\t',
@@ -108,7 +46,7 @@ def create_training_data(
     index: InvertedIndex,
     context: PageContext,
     max_tweets: int = 100
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     gold_set = set()
     for _, row in annotations_df.iterrows():
         gold_set.add((str(row['tweet_id']), str(row['page_id'])))

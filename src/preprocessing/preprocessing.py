@@ -1,6 +1,5 @@
 import re
 
-
 def clean_tweet(text: str) -> str:
     if not text:
         return ""
