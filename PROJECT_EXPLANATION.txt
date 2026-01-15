@@ -1,0 +1,68 @@
+GLOBAL PROJECT EXPLANATION - TWEET ENTITY LINKING
+===================================================
+
+1. THE GOAL: WHAT ARE WE BUILDING?
+----------------------------------
+We are building an "Entity Linking System" for tweets.
+Imagine a tweet says: "I love the Apple event!"
+Our system's job is to figure out that "Apple" refers to the technology company (Wikipedia: Apple_Inc.), NOT the fruit (Wikipedia: Apple).
+
+It bridges the gap between messy text (Tweets) and structured knowledge (Wikipedia).
+
+2. THE ARCHITECTURE: HOW DOES IT WORK?
+--------------------------------------
+The system works in 3 big steps:
+
+Step A: Candidate Generation (Rough Search)
+   - We find all possible meanings for n-grams in the tweet.
+   - Example: For "Apple", we look in our database and find:
+     1. Apple_Inc (Tech company)
+     2. Apple (Fruit)
+     3. Apple_Records (Beatles label)
+   - This uses the **Inverted Index (LMDB)**.
+
+Step B: Feature Extraction (Gathering Clues)
+   - For each candidate, we gather "clues" to decide if it's the right one.
+   - Clues include:
+     - Popularity: Is this page famous? (PageRank from Context LMDB)
+     - Context: Does the tweet talk about "iPhone" or "fruit"?
+     - Commonness: How often does "Apple" usually mean the company?
+   - These features come from the **Page Context (LMDB)**.
+
+Step C: Classification (The Brain)
+   - We feed these clues (features) into our **Deep Neural Network (DNN)**.
+   - The model outputs a probability (0 to 1).
+   - If probability > 0.5, we say "Yes, this is the link!".
+
+3. EXPLAINING THE COMPONENTS
+----------------------------
+
+► TSV FILES (The Teacher)
+   - Role: **Training Data**
+   - What they contain: Real tweets where humans have manually marked the correct answers.
+   - How we use them: We use these to "teach" our DNN. We show it the tweet + the correct answers so it learns which clues matter.
+   - We DO NOT search inside TSV files. We only use them to train and test.
+
+► LMDB (The Library/Knowledge Base)
+   - Role: **Fast Lookup Database** (Key-Value Store)
+   - It acts as our offline, compressed Wikipedia.
+   - We have TWO LMDBs:
+     1. `PostingsLast`: The Index. You give it a word ("Apple"), it gives you a list of possible Wikipedia pages.
+     2. `PageIdToContexte2`: The Details. You give it a Page ID, it gives you info about that page (PageRank, View Count, Categories).
+   - *Crucial Point*: We do NOT train on LMDB. We use LMDB to *generate the features* that we feed into the model.
+
+► GOOGLE PROTOCOL BUFFERS (The "Google" Confusion)
+   - **There are NO Google API Keys involved.**
+   - You might see "google" in the imports (`google.protobuf`).
+   - This is NOT a cloud service. It is a data format library (like JSON or XML, but smaller and faster) created by Google.
+   - Role: The data inside the LMDBs is stored in this format. We need this library just to "read" and decode the data we pull from LMDB.
+
+4. SUMMARY FOR YOUR TEAMMATES
+-----------------------------
+"Guys, here is the flow:
+1. We take a tweet.
+2. We query the 'PostingsLast' database (LMDB) to find all possible Wikipedia pages for words in the tweet.
+3. We query the 'PageContext' database (LMDB) to get stats about those pages (like how popular they are).
+4. We combine these stats into a 'feature vector' (a list of numbers).
+5. We run this vector through our Neural Network (which we trained on the TSV files).
+6. The Neural Network decides if the link is correct."
