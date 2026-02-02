@@ -10,10 +10,13 @@ def clean_tweet(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text.lower()
 
-def get_ngrams(text: str, min_n: int = 1, max_n: int = 6) -> list[str]:
+def get_ngrams(text: str, min_n: int = 1, max_n: int | None = None) -> list[str]:
+    """Generate n-grams from text. Per TELS paper, max_n defaults to tweet length."""
     if not text:
         return []
     words = text.split()
+    if max_n is None:
+        max_n = len(words)
     ngrams = []
     for n in range(min_n, max_n + 1):
         if len(words) < n:
