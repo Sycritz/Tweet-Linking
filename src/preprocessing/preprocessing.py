@@ -3,15 +3,19 @@ import re
 def clean_tweet(text: str) -> str:
     if not text:
         return ""
+    # Process hashtags: Remove # but keep text, handling CamelCase
+    # e.g., #TheForceAwakens -> The Force Awakens
+    text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    
     text = re.sub(r'http\s+|www\.\s+', '', text)
-    text = re.sub(r'@\w+', '', text)
-    text = re.sub(r'#(\w+)', r'\1', text)
-    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'@\w+', '', text) 
+    text = re.sub(r'#', '', text)     
+    text = re.sub(r'[^\w\s]', '', text) 
     text = re.sub(r'\s+', ' ', text).strip()
     return text.lower()
 
 def get_ngrams(text: str, min_n: int = 1, max_n: int | None = None) -> list[str]:
-    """Generate n-grams from text. Per TELS paper, max_n defaults to tweet length."""
+
     if not text:
         return []
     words = text.split()

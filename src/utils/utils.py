@@ -53,7 +53,7 @@ def create_training_data(
     annotations_df: pd.DataFrame,
     index: InvertedIndex,
     context: PageContext,
-    max_tweets: int | None = 100,
+    max_tweets: int | None = None,
     use_full_context: bool = True
 ) -> Tuple[np.ndarray, np.ndarray]:
   

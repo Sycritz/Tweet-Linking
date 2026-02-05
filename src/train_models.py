@@ -1,44 +1,43 @@
 """Main training script for entity linking models.
 
-Trains DNN, SVM, and XGBoost models on Meij dataset and saves as pkl files.
+Trains DNN, SVM, and XGBoost models on Meij dataset and saves to models directory.
 """
 
-import os
-import sys
 import argparse
 from pathlib import Path
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-# Ensure project root is in path
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from src.utils.utils import load_meij_dataset, create_training_data
 from src.core import InvertedIndex, PageContext
-from src.candidate_generation.candidate_generator import generate_candidates
-from src.features.features_extractor import extract_features, FEATURE_NAMES
+from src.features.features_extractor import FEATURE_NAMES
 from src.models.svm_model import train_svm
 from src.models.xgboost_model import train_xgboost
+from src.models.dnn_model import (
+    EntityLinkingDataset, EntityLinkingDNN, train_model, DNNEntityLinker
+)
+
+PROJECT_ROOT = Path(__file__).parent.parent
 
 
-
-def train_dnn_model(X_train, y_train, X_val, y_val, epochs: int = 20):
+def train_dnn_model(X_train, y_train, X_val, y_val, epochs: int = 50, patience: int = 10):
     import torch
     from torch.utils.data import DataLoader
-    from src.models.dnn_model import EntityLinkingDataset, EntityLinkingDNN, train_model
     
     train_dataset = EntityLinkingDataset(X_train, y_train)
     val_dataset = EntityLinkingDataset(X_val, y_val)
     
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
     
     input_dim = X_train.shape[1]
-    model = EntityLinkingDNN(input_dim=input_dim, hidden_dim=128)
+    model = EntityLinkingDNN(input_dim=input_dim)
     
-    trained_model = train_model(model, train_loader, val_loader, epochs=epochs)
-    return trained_model
+    trained_model = train_model(
+        model, train_loader, val_loader, 
+        epochs=epochs, patience=patience
+    )
+    return trained_model, input_dim
 
 
 def main():
@@ -47,8 +46,10 @@ def main():
                         help="Max tweets to use (for testing)")
     parser.add_argument("--output-dir", type=str, default="models",
                         help="Output directory for models")
-    parser.add_argument("--epochs", type=int, default=20,
+    parser.add_argument("--epochs", type=int, default=50,
                         help="DNN training epochs")
+    parser.add_argument("--patience", type=int, default=10,
+                        help="Early stopping patience")
     parser.add_argument("--xgb-grid-search", action="store_true",
                         help="Run XGBoost grid search")
     args = parser.parse_args()
@@ -68,15 +69,16 @@ def main():
     annotations_path = base_path / "Provided-Resources/Datasets/MeijRevisedAugmented/MeijAnnotations.tsv"
 
     print("Loading Meij dataset...")
-    tweets_df, annotations_df = load_meij_dataset( tweets_path, annotations_path)
+    tweets_df, annotations_df = load_meij_dataset(tweets_path, annotations_path)
     print(f"Loaded {len(tweets_df)} tweets, {len(annotations_df)} annotations")
     
-    print("Generating features...")
+    print("Generating features (this may take a while for full dataset)...")
     X, y = create_training_data(
         tweets_df, annotations_df, index, context,
-        
+        max_tweets=args.max_tweets
     )
     print(f"Created {len(X)} samples, {sum(y)} positive ({100*sum(y)/len(y):.1f}%)")
+    print(f"Feature dimension: {X.shape[1]} ({len(FEATURE_NAMES)} features)")
     
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
@@ -101,10 +103,17 @@ def main():
     print(f"Saved XGBoost model to {output_dir / 'xgboost_entity_linker.pkl'}")
     
     print("\n" + "="*50)
-    print("Training DNN...")
+    print("Training DNN (enhanced architecture)...")
     import torch
-    dnn_model = train_dnn_model(X_train, y_train, X_val, y_val, epochs=args.epochs)
-    torch.save(dnn_model.state_dict(), output_dir / "dnn_entity_linker.pt")
+    dnn_pytorch_model, input_dim = train_dnn_model(
+        X_train, y_train, X_val, y_val, 
+        epochs=args.epochs, patience=args.patience
+    )
+    
+    dnn_wrapper = DNNEntityLinker(input_dim=input_dim)
+    dnn_wrapper.model = dnn_pytorch_model
+    dnn_wrapper._is_fitted = True
+    dnn_wrapper.save(output_dir / "dnn_entity_linker.pt")
     print(f"Saved DNN model to {output_dir / 'dnn_entity_linker.pt'}")
     
     index.close()
@@ -112,9 +121,9 @@ def main():
     
     print("\n" + "="*50)
     print("Training complete! Models saved to:", output_dir)
-    print(f"  - svm_entity_linker.pkl")
-    print(f"  - xgboost_entity_linker.pkl")
-    print(f"  - dnn_entity_linker.pt")
+    print("  - svm_entity_linker.pkl")
+    print("  - xgboost_entity_linker.pkl")
+    print("  - dnn_entity_linker.pt")
 
 
 if __name__ == "__main__":

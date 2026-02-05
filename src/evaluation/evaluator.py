@@ -4,7 +4,7 @@ Features:
 - Multi-dataset evaluation (NEEL2016, Mena, Meij)
 - Metrics: F1, Precision, Recall
 - Feature importance analysis
-- TagMe/AIDA API comparison (optional)
+- TagMe/AIDA API comparison 
 - Extensible architecture for embedding models
 """
 
