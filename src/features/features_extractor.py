@@ -1,16 +1,7 @@
 """Feature extraction module implementing TELS paper features.
 
-Features implemented:
-1. CMNS (Commonness) - how often the mention refers to the entity
-2. LE Overlap - overlap between tweet and entity reference anchors
-3. CE Overlap - overlap between tweet and entity categories
-4. vE - log page views (popularity)
-5. rE - log page rank (centrality)
-6. TF-IDF - term frequency of n-gram in entity content
-7. Absorption - proportion of anchors contained in n-gram
-8. Purity - ratio of exact n-gram occurrences in references
-9. DIST - count of distinct references linking to entity
-10. T_OR - redirect/anchor indicator flags
+Includes Commonness (CMNS), overlap metrics (LE/CE), popularity features (vE, rE),
+and context-based metrics (absorption, purity, DIST).
 """
 
 import numpy as np

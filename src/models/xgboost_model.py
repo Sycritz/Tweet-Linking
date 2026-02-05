@@ -1,7 +1,4 @@
-"""XGBoost model for entity linking.
-
-Uses reasonable defaults with optional grid search capability for hyperparameter tuning.
-"""
+"""XGBoost model for entity linking with grid search capability."""
 
 import numpy as np
 from xgboost import XGBClassifier

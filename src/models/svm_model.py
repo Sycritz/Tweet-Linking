@@ -1,7 +1,4 @@
-"""SVM model for entity linking.
-
-Uses polynomial kernel with degree=2 and C=1 (optimal params per teammate grid search).
-"""
+"""SVM model for entity linking using a polynomial kernel."""
 
 import numpy as np
 from sklearn.svm import SVC

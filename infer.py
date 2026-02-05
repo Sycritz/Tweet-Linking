@@ -80,26 +80,27 @@ def link_entities(
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Link entities in tweets to Wikipedia')
-    parser.add_argument('--tweet', type=str, required=True, help='Tweet text to analyze')
+    parser = argparse.ArgumentParser(description='Entity Linking Inference')
+    parser.add_argument('--tweet', type=str, required=True, help='Input tweet text')
     parser.add_argument('--model', type=str, default='xgboost',
                         choices=['svm', 'xgboost', 'dnn'],
-                        help='Model to use for prediction')
+                        help='Model selection')
     parser.add_argument('--models-dir', type=str, default='models',
-                        help='Directory containing trained models')
+                        help='Path to trained models')
     parser.add_argument('--threshold', type=float, default=0.5,
-                        help='Confidence threshold for entity links')
+                        help='Confidence threshold')
     args = parser.parse_args()
 
+    # Paths to resources
     index_path = PROJECT_ROOT / "Provided-Resources/PostingsLast"
     context_path = PROJECT_ROOT / "Provided-Resources/PageIdToContexte2"
 
-    print("Loading resources...")
+    print(f"Loading resources and {args.model.upper()} model...")
     index = InvertedIndex(str(index_path))
     context = PageContext(str(context_path))
     model = load_model(args.model, Path(args.models_dir))
-    print(f"Using {args.model.upper()} model\n")
 
+    print("-" * 60)
     print(f"Tweet: {args.tweet}")
     print("-" * 60)
 

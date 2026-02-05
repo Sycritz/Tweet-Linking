@@ -1,7 +1,7 @@
-"""Enhanced DNN model for entity linking.
+"""DNN model for entity linking.
 
-Deep neural network with batch normalization, residual connections,
-early stopping, and learning rate scheduling for improved performance.
+Implements a deep neural network with residual connections, batch normalization,
+and early stopping.
 """
 
 import numpy as np

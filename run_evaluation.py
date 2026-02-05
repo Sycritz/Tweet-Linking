@@ -1,10 +1,7 @@
-"""Comprehensive evaluation script for entity linking models.
+"""Evaluation script for entity linking models.
 
-Evaluates all trained models (DNN, SVM, XGBoost) on multiple datasets,
-compares with TagMe API, generates performance graphs and feature importance analysis.
-
-Usage:
-    python run_evaluation.py --output-dir results
+Compares trained models (DNN, SVM, XGBoost) against TagMe and DBpedia Spotlight
+APIs on multiple datasets (NEEL, Mena, Meij).
 """
 
 import os
