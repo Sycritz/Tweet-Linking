@@ -1,11 +1,42 @@
 # Tweet Entity Linking System (TELS)
 
 ## Project Overview
-This project implements an end-to-end Entity Linking (EL) system designed specifically for short, noisy text such as tweets. The system identifies entity mentions and links them to their corresponding Wikipedia pages, addressing challenges like informal grammar, hashtags, and limited context.
+**Note**: This project was developed as the final assignment for the **Data Mining II** course. It serves as an educational implementation of Entity Linking concepts.
+
+This system implements an end-to-end Entity Linking (EL) pipeline designed for short, noisy text (Tweets). It identifies entity mentions and links them to Wikipedia pages, handling challenges like hashtags and informal grammar.
 
 ## Architecture
 
-The system follows a modular pipeline approach:
+```mermaid
+graph LR
+    Input((Input Tweet)) --> Prep[Preprocessing]
+    Prep --> Cand[Candidate Generation]
+
+    subgraph Knowledge Base
+    direction TB
+    Index[(Inverted Index)]
+    Context[(Entity Context)]
+    end
+
+    Cand -.-> Index
+    Cand -.-> Context
+    Cand --> Feat[Feature Extraction]
+
+    subgraph Ranking Models
+    direction TB
+    XGB[XGBoost]
+    DNN[Deep Neural Net]
+    SVM[SVM]
+    end
+
+    Feat --> XGB & DNN & SVM
+    XGB & DNN & SVM --> Output((Linked Entities))
+
+    style Input fill:#e1f5fe,stroke:#01579b
+    style Output fill:#e8f5e9,stroke:#2e7d32
+    style Prep fill:#fff9c4,stroke:#fbc02d
+    style Feat fill:#fff9c4,stroke:#fbc02d
+```
 
 1.  **Preprocessing**:
     *   Cleans raw tweets by removing URLs, user mentions, and special characters.
@@ -64,9 +95,7 @@ python run_evaluation.py
 
 ## Demo
 
-
-[Watch Demo Video](demo/demo.gif)
-
+![TELS Demo](demo/demo.gif)
 
 ## Performance
 The system has been evaluated on multiple benchmarks (NEEL2016, Mena, Meij).
